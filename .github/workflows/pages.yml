@@ -1,0 +1,63 @@
+name: Build and deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 1 * *" # monthly, to pick up new DrugMechDB commits
+  workflow_dispatch:
+    inputs:
+      drugmechdb_ref:
+        description: DrugMechDB branch, tag or commit to build from
+        default: main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve the DrugMechDB commit
+        id: dmdb
+        env:
+          REF: ${{ inputs.drugmechdb_ref || 'main' }}
+        run: |
+          if [[ "$REF" =~ ^[0-9a-f]{40}$ ]]; then sha="$REF"
+          else sha=$(git ls-remote https://github.com/SuLab/DrugMechDB.git "$REF" | head -n1 | cut -f1)
+          fi
+          test -n "$sha" || { echo "Cannot resolve DrugMechDB ref $REF"; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "DrugMechDB $REF -> $sha"
+
+      - name: Download indication_paths.json
+        run: |
+          curl -fsSL -o indication_paths.json \
+            "https://raw.githubusercontent.com/SuLab/DrugMechDB/${{ steps.dmdb.outputs.sha }}/indication_paths.json"
+          sha256sum indication_paths.json
+
+      - name: Build the page
+        run: python3 build.py indication_paths.json "${{ steps.dmdb.outputs.sha }}" site/index.html
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

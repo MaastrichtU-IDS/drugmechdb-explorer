@@ -1,0 +1,4 @@
+site/
+indication_paths.json
+__pycache__/
+.DS_Store
