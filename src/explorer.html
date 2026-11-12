@@ -602,7 +602,7 @@ document.addEventListener('mouseover', e => { const el = e.target.closest('[data
 document.addEventListener('mousemove', e => { if (tip.hidden) return; const w = tip.offsetWidth, h = tip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; tip.style.left = x + 'px'; tip.style.top = y + 'px'; });
 document.addEventListener('mouseleave', () => tip.hidden = true);
 
-document.getElementById('subtitle').textContent = `${fmt(M.length)} curated drug → disease mechanisms (${fmt(new Set(M.map(m => m.drug.toLowerCase())).size)} drugs, ${fmt(new Set(M.map(m => m.disease.toLowerCase())).size)} diseases), reduced to sequences of node types. Filter once; every view recomputes for the mechanisms that match.`;
+document.getElementById('subtitle').textContent = `${fmt(M.length)} curated drug → disease mechanisms (${fmt(new Set(M.map(m => m.dbid || m.nodes[m.src]?.[0] || m.drug)).size)} drugs, ${fmt(new Set(M.map(m => m.nodes[m.dst]?.[0] || m.disease)).size)} diseases), reduced to sequences of node types. Filter once; every view recomputes for the mechanisms that match.`;
 document.getElementById('foot').innerHTML = `Data: <a href="https://github.com/SuLab/DrugMechDB" target="_blank" rel="noopener">DrugMechDB</a> (${esc(D.source)}), CC0 1.0. Routes are simple drug → disease paths through each mechanism graph (capped at ${ROUTE_CAP}). “OptimusKG types only” keeps mechanisms whose node types all have an OptimusKG counterpart: chemicals, gene families, complexes, cells and organisms do not.`;
 
 // start: aspirin → myocardial infarction as the opening example
